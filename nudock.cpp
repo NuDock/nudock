@@ -12,6 +12,10 @@ NuDock::NuDock(bool _debug,
       m_comm_type(_comm_type), 
       m_port(_port)
 {
+  if (m_default_schemas_location.empty()) {
+    m_default_schemas_location = NUDOCK_SCHEMAS_DIR;
+  }
+
   std::cout << DEBUG() << "Created Nudock instance!" << std::endl;
   std::cout << DEBUG() << "debug  : " << m_debug << std::endl;
   std::cout << DEBUG() << "schemas: " << m_default_schemas_location << std::endl;
@@ -209,8 +213,8 @@ void NuDock::start_server()
     case CommunicationType::UNIX_DOMAIN_SOCKET:
       std::cout << DEBUG() << "Using UNIX domain socket for communication" << std::endl;
       // Clean up the old socket file, if any
-      unlink("/tmp/nudock.sock");
-      m_server->set_address_family(AF_UNIX).listen("/tmp/nudock.sock", m_port);
+      unlink(("/tmp/nudock_" +  std::to_string(m_port) + ".sock").c_str());
+      m_server->set_address_family(AF_UNIX).listen(("/tmp/nudock_" +  std::to_string(m_port) + ".sock").c_str(), m_port);
       break;
     case CommunicationType::LOCALHOST:
       std::cout << DEBUG() << "Using localhost for communication" << std::endl;
@@ -237,7 +241,7 @@ void NuDock::start_client()
   switch (m_comm_type) {
     case CommunicationType::UNIX_DOMAIN_SOCKET:
       std::cout << DEBUG() << "Using UNIX domain socket for communication" << std::endl;
-      m_client = std::make_unique<httplib::Client>("/tmp/nudock.sock", m_port);
+      m_client = std::make_unique<httplib::Client>("/tmp/nudock_" +  std::to_string(m_port) + ".sock");
       m_client->set_address_family(AF_UNIX);
       break;
     case CommunicationType::LOCALHOST:
