@@ -21,7 +21,7 @@
         "sys_pars": {
           "type": "object",
           "patternProperties": {
-            "^[a-zA-Z_][a-zA-Z0-9_]*$": { "type": "number"}
+            "^[a-zA-Z0-9_]+$": { "type": "number"}
           },
           "additionalProperties": false
         }

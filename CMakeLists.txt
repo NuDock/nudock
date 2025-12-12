@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(NuDock VERSION 0.0.1 LANGUAGES CXX)
+project(NuDock VERSION 0.0.2 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -32,14 +32,15 @@ target_include_directories(nudock
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/nudock>
 )
 
 target_link_libraries(nudock
   PUBLIC
-    nlohmann_json
+    nlohmann_json::nlohmann_json
+  PRIVATE
     nlohmann_json_schema_validator::validator
-    httplib
+    httplib::httplib
 )
 
 # Link the schema dirs to the library
@@ -62,7 +63,13 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/schemas/
   FILES_MATCHING PATTERN "*.json"
 )
 
-install(TARGETS nudock EXPORT nudockTargets)
+install(TARGETS nudock 
+        EXPORT nudockTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
 install(EXPORT nudockTargets
   FILE NuDockTargets.cmake
