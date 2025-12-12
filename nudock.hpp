@@ -4,14 +4,13 @@
  * @brief A small tool for server-client communication using JSON over HTTP.
  * 
  * @todo: Add debugging that prints out all the json messages into a file.
- * @todo: Refactor to have the http as an option, so we can use this as a library link directly between cross-compiled C++ code.
  * @todo: Sort out the debugging define, should be more descriptive.
  * @todo: Add schema validation layers on the client side too.
  * @todo: The validation should be a compile-time option? Or better, templated. E.g. NuDock<true> for validation, NuDock<false> for no validation.
  * @todo: All functions should have documentation. More comments.
- * @todo: Remove hard-coded localhost and port, make them configurable. If configurable, could even run on a different machine!
  * @todo: Rethink abort(). 
- * @todo: MORE SPEED! Test the Unix Domain Sockets instead, or even shared memory.
+ * @todo: Add versioning to the schemas, so that client and server can negotiate which version to use.
+ * @todo: Add ability to start a container with the server inside (with explicit port number) for easier deployment.
  * 
  * @date 2025-07-01
  * @author Artur Sztuc (a.sztuc@ucl.ac.uk)
