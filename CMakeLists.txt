@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(NuDock VERSION 0.0.1 LANGUAGES CXX)
+project(NuDock VERSION 0.0.2 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
