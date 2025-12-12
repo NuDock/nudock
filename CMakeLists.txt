@@ -38,6 +38,7 @@ target_include_directories(nudock
 target_link_libraries(nudock
   PUBLIC
     nlohmann_json::nlohmann_json
+  PRIVATE
     nlohmann_json_schema_validator::validator
     httplib::httplib
 )
