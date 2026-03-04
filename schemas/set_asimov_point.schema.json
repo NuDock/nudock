@@ -1,0 +1,16 @@
+{
+  "$id": "set_asimov_point",
+  "type": "object",
+  "properties": {
+    "request": {
+      "type": "string",
+      "additionalProperties": false
+    },
+    "response": {
+      "type": "string",
+      "additionalProperties": false
+    }
+  },
+  "required": ["request", "response"],
+  "additionalProperties": false
+}

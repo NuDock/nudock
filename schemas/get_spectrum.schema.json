@@ -1,0 +1,85 @@
+{
+  "$id": "get_spectrum",
+  "type": "object",
+  "properties": {
+    "request": {
+      "type": "string"
+    },
+    "response": {
+      "type": "object",
+      "required": ["sample_names", "dimensions", "bin_edges", "bin_values"],
+      "additionalProperties": false,
+      "properties": {
+        "sample_names": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "axis_titles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "bin_edges": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "array",
+                "items": { 
+                  "type": "array",
+                  "items": { "type": "number" }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "bin_values": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "array",
+                "items": { "type": "number" }
+              },
+              {
+                "type": "array",
+                "items": { 
+                  "type": "array",
+                  "items": { "type": "number" }
+                }
+              }
+            ]
+          }
+        },
+        "bin_vertices": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["request", "response"],
+  "additionalProperties": false
+}
+

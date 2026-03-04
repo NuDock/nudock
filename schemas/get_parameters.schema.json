@@ -1,0 +1,25 @@
+{
+  "$id": "get_parameters",
+  "type": "object",
+  "properties": {
+    "request": {
+      "type": "string",
+      "additionalProperties": false
+    },
+    "response": {
+      "type": "object",
+      "properties": {
+        "syst_pars": {
+          "type": "object",
+          "description": "Mapping of systematic parameter names to their current numerical values",
+          "additionalProperties": { "type": "number" }
+        },
+        "duration_us": { "type": "number" }
+      },
+      "required": ["sys_pars"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["request", "response"],
+  "additionalProperties": false
+}
