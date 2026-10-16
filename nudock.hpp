@@ -36,13 +36,13 @@ using nlohmann::json_schema::json_validator;
 using HandlerFunction = std::function<nlohmann::json(const nlohmann::json&)>;
 
 // Debugging macro to print debug messages with function name and line number
-#define DEBUG_PREFIX() (this->m_debug_prefix + "::" + __func__ + "::L" + std::to_string(__LINE__) + " ")
+#define DEBUG_PREFIX(level) ("[" level "] " + this->m_debug_prefix + "::" + __func__ + "::L" + std::to_string(__LINE__) + " ")
 
 // Logging macros that check verbosity level
-#define LOG_DEBUG(msg) if (this->m_verbosity >= VerbosityLevel::DEBUG) std::cout << DEBUG_PREFIX() << msg << std::endl
-#define LOG_INFO(msg) if (this->m_verbosity >= VerbosityLevel::INFO) std::cout << DEBUG_PREFIX() << msg << std::endl
-#define LOG_WARNING(msg) if (this->m_verbosity >= VerbosityLevel::WARNING) std::cerr << DEBUG_PREFIX() << msg << std::endl
-#define LOG_ERROR(msg) if (this->m_verbosity >= VerbosityLevel::ERROR) std::cerr << DEBUG_PREFIX() << msg << std::endl
+#define LOG_DEBUG(msg) if (this->m_verbosity >= VerbosityLevel::Debug) std::cout << DEBUG_PREFIX("DEBUG") << msg << std::endl
+#define LOG_INFO(msg) if (this->m_verbosity >= VerbosityLevel::Info) std::cout << DEBUG_PREFIX("INFO") << msg << std::endl
+#define LOG_WARNING(msg) if (this->m_verbosity >= VerbosityLevel::Warning) std::cerr << DEBUG_PREFIX("WARNING") << msg << std::endl
+#define LOG_ERROR(msg) if (this->m_verbosity >= VerbosityLevel::Error) std::cerr << DEBUG_PREFIX("ERROR") << msg << std::endl
 
 // Macro to set an error response and stop the server
 #define ERROR_RESPONSE(res, message) \
@@ -75,7 +75,7 @@ enum class CommunicationType {
   TCP,
 };
 
-enum VerbosityLevel { ERROR, WARNING, INFO, DEBUG };
+enum class VerbosityLevel { Error, Warning, Info, Debug };
 
 class NuDock
 {
@@ -95,7 +95,7 @@ class NuDock
            const std::string& _default_schemas_location=NUDOCK_SCHEMAS_DIR,
            const CommunicationType& _comm_type=CommunicationType::LOCALHOST,
            const int& _port=1234,
-           const VerbosityLevel& _verbosity=VerbosityLevel::INFO
+           const VerbosityLevel& _verbosity=VerbosityLevel::Info
           );
 
     /** 
