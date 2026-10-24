@@ -3,22 +3,23 @@
 NuDock::NuDock(bool _debug, 
                const std::string &_default_schemas_location,
                const CommunicationType& _comm_type,
-               const int& _port)
+               const int& _port,
+               const VerbosityLevel& _verbosity)
     : m_server(nullptr),
       m_client(nullptr),
       m_debug(_debug), m_debug_prefix("Undefined"),
       m_default_schemas_location(_default_schemas_location),
       m_request_counter(0),
       m_comm_type(_comm_type), 
-      m_port(_port)
+      m_port(_port),
+      m_verbosity(_verbosity)
 {
   if (m_default_schemas_location.empty()) {
     m_default_schemas_location = NUDOCK_SCHEMAS_DIR;
   }
-
-  std::cout << DEBUG() << "Created Nudock instance!" << std::endl;
-  std::cout << DEBUG() << "debug  : " << m_debug << std::endl;
-  std::cout << DEBUG() << "schemas: " << m_default_schemas_location << std::endl;
+  LOG_INFO("Created Nudock instance!");
+  LOG_INFO("debug  : " << m_debug);
+  LOG_INFO("schemas: " << m_default_schemas_location);
 }
 
 nlohmann::json NuDock::load_json_file(const std::string& _path)
@@ -46,11 +47,11 @@ void NuDock::register_response(const std::string& _request,
 
   // Check if the request name is valid
   if (_request.empty()) {
-    std::cerr << DEBUG() << "Request name is empty!" << std::endl;
+    LOG_ERROR("Request name is empty!");
     return;
   }
   if (m_request_handlers.count(_request)) {
-    std::cerr << DEBUG() << "Request handler for \"" << _request << "\" already exists!" << std::endl;
+    LOG_ERROR("Request handler for \"" << _request << "\" already exists!");
     return;
   }
 
@@ -72,23 +73,23 @@ void NuDock::register_response(const std::string& _request,
 
   // Add the request handler function
   m_request_handlers[_request] = std::move(_handler_function);
-  std::cout << DEBUG() << "Registered request handler for \"" << _request << "\" with schema at: " << schema_path << std::endl;
+  LOG_INFO("Registered request handler for \"" << _request << "\" with schema at: " << schema_path);
 }
 
 bool NuDock::validate_start(const nlohmann::json& _message)
 {
   if (!_message.contains("version")) {
-    std::cerr << DEBUG() << "Received /validate_start request without provided \"version\" entry! We will crash. Full request received:" << std::endl;
-    std::cerr << DEBUG() << _message.dump() << std::endl;
+    LOG_ERROR("Received /validate_start request without provided \"version\" entry! We will crash. Full request received:");
+    LOG_ERROR(_message.dump());
     return false;
   }
 
   if (_message["version"] != m_version) {
-    std::cerr << DEBUG() << "Received request from client with version: " << _message["version"] << ", this server's version is " << m_version << std::endl;
+    LOG_ERROR("Received request from client with version: " << _message["version"] << ", this server's version is " << m_version);
     return false;
   }
   else {
-    std::cout << DEBUG() << "Internal version: " << m_version << " external version: " << _message["version"] << std::endl;
+    LOG_INFO("Internal version: " << m_version << " external version: " << _message["version"]);
   }
 
   return true;
@@ -97,7 +98,7 @@ bool NuDock::validate_start(const nlohmann::json& _message)
 void NuDock::start_server()
 {
   if (m_client || m_server) {
-    std::cerr << DEBUG() << "Client or server already started" << std::endl;
+    LOG_ERROR("Client or server already started");
     return;
   }
 
@@ -106,7 +107,7 @@ void NuDock::start_server()
   m_server = std::make_unique<httplib::Server>();
 
   if (!m_server->is_valid()){
-    std::cerr << DEBUG() << "Server is not valid" << std::endl;
+    LOG_ERROR("Server is not valid");
     return;
   }
 
@@ -115,12 +116,12 @@ void NuDock::start_server()
   // sending an appropriate response.
   m_server->Post("/validate_start", [&](const httplib::Request& req, httplib::Response& res) {
     try {
-      std::cout << "Server received request for /validate_start" << std::endl;
+      LOG_INFO("Server received request for /validate_start");
 
       // deserialize
       nlohmann::json req_json = nlohmann::json::parse(req.body);
       bool validated = validate_start(req_json);
-      std::cout << DEBUG() << "Server validated, sending validation response to the client to validate it" << std::endl;
+      LOG_INFO("Server validated, sending validation response to the client to validate it");
 
       m_response.clear();
       m_response["version"] = m_version;
@@ -132,7 +133,7 @@ void NuDock::start_server()
       }
     }
     catch (const std::exception& e) {
-      std::cout << DEBUG() << "Exception caught: \"" << e.what() << "\" Setting response to 400" << std::endl;
+      LOG_ERROR("Exception caught: \"" << e.what() << "\" Setting response to 400");
       ERROR_RESPONSE(res, e.what());
     }
   });
@@ -151,10 +152,10 @@ void NuDock::start_server()
             m_schema_validator[request_name].request_validator->validate(m_request, m_err);
           }
           catch (const std::exception& e) {
-            std::cout << DEBUG() << "Validating the request with name \"" << request_name << "\" failed! Here is why: " << e.what() << std::endl;
-            std::cout << DEBUG() << " -- Expected format : " << m_schema_validator[request_name].schema["request"].dump() << std::endl;
-            std::cout << DEBUG() << " -- Request received: " << m_request.dump() << std::endl;
-            std::cout << DEBUG() << " -- Aborting" << std::endl;
+            LOG_ERROR("Validating the request with name \"" << request_name << "\" failed! Here is why: " << e.what());
+            LOG_ERROR(" -- Expected format : " << m_schema_validator[request_name].schema["request"].dump());
+            LOG_ERROR(" -- Request received: " << m_request.dump());
+            LOG_ERROR(" -- Aborting");
             ERROR_RESPONSE(res, "Server request validation failed: " + std::string(e.what()));
           }
         }
@@ -169,20 +170,20 @@ void NuDock::start_server()
             m_schema_validator[request_name].response_validator->validate(m_response, m_err);
           }
           catch (const std::exception& e) {
-            std::cout << DEBUG() << "Validating the response failed! Here is why: " << e.what() << std::endl;
-            std::cout << DEBUG() << "Expected format: " << m_schema_validator[request_name].schema["response"].dump() << std::endl;
-            std::cout << DEBUG() << "Response given : " << m_response.dump() << std::endl;
-            std::cout << DEBUG() << "Aborting" << std::endl;
+            LOG_ERROR("Validating the response failed! Here is why: " << e.what());
+            LOG_ERROR("Expected format: " << m_schema_validator[request_name].schema["response"].dump());
+            LOG_ERROR("Response given : " << m_response.dump());
+            LOG_ERROR("Aborting");
             ERROR_RESPONSE(res, "Server response validation failed: " + std::string(e.what()));
           }
         }
 
         // Sending the response back to the client
         res.set_content(m_response.dump(), "application/json");
-        std::cout << DEBUG() << "Request counter: " << m_request_counter << std::endl;
+        LOG_DEBUG("Request counter: " << m_request_counter);
       } 
       catch (const std::exception& e) {
-        std::cout << DEBUG() << "Exception caught for request \"" << request_name << "\" : \"" << e.what() << "\" Setting response to 400" << std::endl;
+        LOG_ERROR("Exception caught for request \"" << request_name << "\" : \"" << e.what() << "\" Setting response to 400");
         ERROR_RESPONSE(res, e.what());
       }
     });
@@ -202,28 +203,28 @@ void NuDock::start_server()
     res.set_content(err.dump(2), "application/json");
   });
 
-  std::cout << DEBUG() << "Registered requests handlers: " << std::endl;
+  LOG_INFO("Registered requests handlers: ");
   for (const auto& request_name: m_request_handlers) {
-    std::cout << DEBUG() << request_name.first << std::endl;
+    LOG_INFO(request_name.first);
   }
 
-  std::cout << DEBUG() << "VERSION: " << m_version << " started" << std::endl;
+  LOG_INFO("VERSION: " << m_version << " started");
 
   switch (m_comm_type) {
     case CommunicationType::UNIX_DOMAIN_SOCKET:
-      std::cout << DEBUG() << "Using UNIX domain socket for communication" << std::endl;
+      LOG_INFO("Using UNIX domain socket for communication");
       // Clean up the old socket file, if any
       unlink(("/tmp/nudock_" +  std::to_string(m_port) + ".sock").c_str());
       m_server->set_address_family(AF_UNIX).listen(("/tmp/nudock_" +  std::to_string(m_port) + ".sock").c_str(), m_port);
       break;
     case CommunicationType::LOCALHOST:
-      std::cout << DEBUG() << "Using localhost for communication" << std::endl;
+      LOG_INFO("Using localhost for communication");
       m_server->listen("localhost", m_port);
       break;
     case CommunicationType::TCP:
-      std::cout << DEBUG() << "TCP for communication not supported!" << std::endl;
+      LOG_INFO("TCP for communication not supported!");
     default:
-      std::cerr << DEBUG() << "Unsupported ucommunication type!" << std::endl;
+      LOG_ERROR("Unsupported communication type!");
       return;
   }
 }
@@ -231,32 +232,31 @@ void NuDock::start_server()
 void NuDock::start_client()
 {
   if (m_client || m_server) {
-    std::cerr << DEBUG() << "Client or server already started" << std::endl;
+    LOG_ERROR("Client or server already started");
     return;
   }
 
   m_debug_prefix = "Client";
-  std::cout << DEBUG() << "Starting the client" << std::endl;
+  LOG_INFO("Starting the client");
 
   switch (m_comm_type) {
     case CommunicationType::UNIX_DOMAIN_SOCKET:
-      std::cout << DEBUG() << "Using UNIX domain socket for communication" << std::endl;
+      LOG_INFO("Using UNIX domain socket for communication");
       m_client = std::make_unique<httplib::Client>("/tmp/nudock_" +  std::to_string(m_port) + ".sock");
       m_client->set_address_family(AF_UNIX);
       break;
     case CommunicationType::LOCALHOST:
-      std::cout << DEBUG() << "Using localhost for communication" << std::endl;
+      LOG_INFO("Using localhost for communication");
       m_client = std::make_unique<httplib::Client>("localhost", m_port);
       break;
     case CommunicationType::TCP:
-      std::cout << DEBUG() << "TCP for communication not supported!" << std::endl;
+      LOG_INFO("TCP for communication not supported!");
     default:
-      std::cerr << DEBUG() << "Unsupported communication type!" << std::endl;
+      LOG_ERROR("Unsupported communication type!");
       return;
   }
 
-  std::cout << DEBUG() << "Client started! Waiting for the server..." << std::endl;
-
+  LOG_INFO("Client started! Waiting for the server...");
   // Since we just started the client, we will validate it against the server
   // straight away by sending a request to the server with the version of the
   // client.
@@ -268,28 +268,28 @@ void NuDock::start_client()
   if (res && res->status == 200) {
     auto res_json = nlohmann::json::parse(res->body);
     validate_start(res_json);
-    std::cout << DEBUG() << "Client validated!" << std::endl;
+    LOG_INFO("Client validated!");
   }
   else {
-    std::cerr << DEBUG() << "Client failed to validate!" << std::endl;
-    std::cerr << DEBUG() << " -- The message was: " << req_json_validate.dump() << std::endl;
-    std::cerr << DEBUG() << "Request failed with status: " << (res ? res->status : 0) << " and error: " << res.error() << std::endl;
+    LOG_ERROR("Client failed to validate!");
+    LOG_ERROR(" -- The message was: " << req_json_validate.dump());
+    LOG_ERROR("Request failed with status: " << (res ? res->status : 0) << " and error: " << res.error());
     throw res.error();
   }
 
-  std::cout << DEBUG() << "VERSION: " << m_version << " started" << std::endl;
+  LOG_INFO("VERSION: " << m_version << " started");
 }
 
 nlohmann::json NuDock::send_request(const std::string& _request, const nlohmann::json& _message)
 {
   m_request_counter++;
   if (!m_client) {
-    std::cerr << DEBUG() << "Client needs to be started first!" << std::endl;
+    LOG_ERROR("Client needs to be started first!");
     std::abort();
   }
 
   if (_request.empty()) {
-    std::cerr << DEBUG() << "Request name is empty!" << std::endl;
+    LOG_ERROR("Request name is empty!");
     std::abort();
   }
 
@@ -299,18 +299,18 @@ nlohmann::json NuDock::send_request(const std::string& _request, const nlohmann:
     if (res && res->status == 200) {
       m_response.clear();
       m_response = nlohmann::json::parse(res->body);
-      std::cout << DEBUG() << "Received response: " << m_response << " from Server" << std::endl;
-      std::cout << DEBUG() << "Request counter: " << m_request_counter << std::endl;
+      LOG_DEBUG("Received response: " << m_response << " from Server");
+      LOG_DEBUG("Request counter: " << m_request_counter);
       return m_response;
     } else {
-      std::cerr << DEBUG() << "Request failed with status: " << (res ? res->status : 0) 
+      LOG_ERROR("Request failed with status: " << (res ? res->status : 0) 
                 << ", error: \"" << (res ? res->body : "") 
-                << "\", message: " << _message.dump() << std::endl;
-      std::cout << DEBUG() << "Request counter: " << m_request_counter << std::endl;
+                << "\", message: " << _message.dump());
+      LOG_DEBUG("Request counter: " << m_request_counter);
       std::abort();
     }
   } catch (const std::exception& e) {
-    std::cerr << DEBUG() << "Exception caught while sending request: " << e.what() << std::endl;
+    LOG_ERROR("Exception caught while sending request: " << e.what());
     std::abort();
   }
 }

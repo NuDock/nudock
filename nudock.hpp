@@ -36,7 +36,13 @@ using nlohmann::json_schema::json_validator;
 using HandlerFunction = std::function<nlohmann::json(const nlohmann::json&)>;
 
 // Debugging macro to print debug messages with function name and line number
-#define DEBUG() (this->m_debug_prefix + "::" + __func__ + "::L" + std::to_string(__LINE__) + " ")
+#define DEBUG_PREFIX(level) ("[" level "] " + this->m_debug_prefix + "::" + __func__ + "::L" + std::to_string(__LINE__) + " ")
+
+// Logging macros that check verbosity level
+#define LOG_DEBUG(msg) if (this->m_verbosity >= VerbosityLevel::Debug) std::cout << DEBUG_PREFIX("DEBUG") << msg << std::endl
+#define LOG_INFO(msg) if (this->m_verbosity >= VerbosityLevel::Info) std::cout << DEBUG_PREFIX("INFO") << msg << std::endl
+#define LOG_WARNING(msg) if (this->m_verbosity >= VerbosityLevel::Warning) std::cerr << DEBUG_PREFIX("WARNING") << msg << std::endl
+#define LOG_ERROR(msg) if (this->m_verbosity >= VerbosityLevel::Error) std::cerr << DEBUG_PREFIX("ERROR") << msg << std::endl
 
 // Macro to set an error response and stop the server
 #define ERROR_RESPONSE(res, message) \
@@ -69,6 +75,8 @@ enum class CommunicationType {
   TCP,
 };
 
+enum class VerbosityLevel { Error, Warning, Info, Debug };
+
 class NuDock
 {
   // Public member functions
@@ -86,7 +94,9 @@ class NuDock
     NuDock(bool _debug=true, 
            const std::string& _default_schemas_location=NUDOCK_SCHEMAS_DIR,
            const CommunicationType& _comm_type=CommunicationType::LOCALHOST,
-           const int& _port=1234);
+           const int& _port=1234,
+           const VerbosityLevel& _verbosity=VerbosityLevel::Info
+          );
 
     /** 
      * @brief Server: responds to requests from the client
@@ -191,4 +201,7 @@ class NuDock
 
     CommunicationType m_comm_type;
     int m_port;
+
+    /// @brief Verbosity level for logging
+    VerbosityLevel m_verbosity;
 };
