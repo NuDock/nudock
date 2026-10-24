@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS        "${CMAKE_CXX_FLAGS_INIT} ${CMAKE_CXX_FLAGS} -fPIC")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Dependencies
-include(${CMAKE_SOURCE_DIR}/externals/CMakeLists.txt)
+include(${CMAKE_CURRENT_SOURCE_DIR}/externals/CMakeLists.txt)
 
 add_library(nudock SHARED
   nudock.cpp
